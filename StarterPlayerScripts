@@ -1,0 +1,24 @@
+local Aim = require(game.ReplicatedStorage:WaitForChild("AimAssistModule"))
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local aiming = false
+
+-- Toggle com botão direito
+UserInputService.InputBegan:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton2 then
+		aiming = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(i)
+	if i.UserInputType == Enum.UserInputType.MouseButton2 then
+		aiming = false
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if aiming then
+		Aim.Update()
+	end
+end)
