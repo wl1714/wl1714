@@ -1,0 +1,33 @@
+local Aim = require(game.ReplicatedStorage.AimAssistModule)
+local panel = script.Parent
+
+-- Sliders (usar TextBox ou UI custom)
+panel.FOVSlider.FocusLost:Connect(function()
+	Aim.Settings.FOV = tonumber(panel.FOVSlider.Text) or Aim.Settings.FOV
+end)
+
+panel.SmoothingSlider.FocusLost:Connect(function()
+	Aim.Settings.Smoothing = tonumber(panel.SmoothingSlider.Text) or Aim.Settings.Smoothing
+end)
+
+panel.PredictionSlider.FocusLost:Connect(function()
+	Aim.Settings.PredictionStrength = tonumber(panel.PredictionSlider.Text) or Aim.Settings.PredictionStrength
+end)
+
+-- Checkboxes
+panel.TeamCheck.MouseButton1Click:Connect(function()
+	Aim.Settings.TeamCheck = not Aim.Settings.TeamCheck
+end)
+
+panel.WallCheck.MouseButton1Click:Connect(function()
+	Aim.Settings.WallCheck = not Aim.Settings.WallCheck
+end)
+
+-- Dropdown AimPart
+panel.AimPartDropdown.Head.MouseButton1Click:Connect(function()
+	Aim.Settings.AimPart = "Head"
+end)
+
+panel.AimPartDropdown.Torso.MouseButton1Click:Connect(function()
+	Aim.Settings.AimPart = "HumanoidRootPart"
+end)
