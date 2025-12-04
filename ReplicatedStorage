@@ -1,0 +1,123 @@
+local module = {}
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+---------------------------------------------------------------------
+-- CONFIGURAÇÕES PADRÃO (alteradas pela interface)
+---------------------------------------------------------------------
+module.Settings = {
+	FOV = 200,
+	Smoothing = 0.15, -- 0 = instant, 1 = não mexe a câmera
+	TeamCheck = true,
+	WallCheck = true,
+	UsePrediction = true,
+	PredictionStrength = 0.1,
+	AimPart = "Head", -- "Head" ou "HumanoidRootPart"
+}
+
+---------------------------------------------------------------------
+-- Função: checa visibilidade (wall-check)
+---------------------------------------------------------------------
+local function isVisible(targetPart)
+	if not module.Settings.WallCheck then
+		return true
+	end
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Blacklist
+	params.FilterDescendantsInstances = {LocalPlayer.Character}
+
+	local origin = Camera.CFrame.Position
+	local direction = (targetPart.Position - origin)
+
+	local result = workspace:Raycast(origin, direction, params)
+
+	if result and result.Instance:IsDescendantOf(targetPart.Parent) then
+		return true
+	end
+
+	return false
+end
+
+---------------------------------------------------------------------
+-- Team Check
+---------------------------------------------------------------------
+local function isEnemy(player)
+	if not module.Settings.TeamCheck then
+		return true
+	end
+	if player.Team == LocalPlayer.Team then
+		return false
+	end
+	return true
+end
+
+---------------------------------------------------------------------
+-- Previsão de movimento
+---------------------------------------------------------------------
+local function applyPrediction(targetPart)
+	if not module.Settings.UsePrediction then
+		return targetPart.Position
+	end
+
+	local humanoid = targetPart.Parent:FindFirstChild("Humanoid")
+	local velocity = humanoid and humanoid.RootPart.Velocity or Vector3.zero
+	return targetPart.Position + (velocity * module.Settings.PredictionStrength)
+end
+
+---------------------------------------------------------------------
+-- Seleciona o alvo mais próximo dentro do FOV
+---------------------------------------------------------------------
+function module.GetClosestTarget()
+	local closest = nil
+	local shortest = module.Settings.FOV
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and isEnemy(player) then
+
+			local part = player.Character:FindFirstChild(module.Settings.AimPart)
+			if part then
+				local screenPos, visible = Camera:WorldToViewportPoint(part.Position)
+
+				if visible then
+					local mouse = game:GetService("UserInputService"):GetMouseLocation()
+					local distance = (Vector2.new(screenPos.X, screenPos.Y) - mouse).Magnitude
+
+					if distance < shortest and isVisible(part) then
+						shortest = distance
+						closest = part
+					end
+				end
+			end
+		end
+	end
+
+	return closest
+end
+
+---------------------------------------------------------------------
+-- Aimbot suave
+---------------------------------------------------------------------
+function module.SmoothAim(targetPosition)
+	local camPos = Camera.CFrame.Position
+	local newCFrame = CFrame.new(camPos, targetPosition)
+
+	-- Smoothing
+	Camera.CFrame = Camera.CFrame:Lerp(newCFrame, 1 - module.Settings.Smoothing)
+end
+
+---------------------------------------------------------------------
+-- Função principal de mira
+---------------------------------------------------------------------
+function module.Update()
+	local target = module.GetClosestTarget()
+	if target then
+		local predicted = applyPrediction(target)
+		module.SmoothAim(predicted)
+	end
+end
+
+return module
